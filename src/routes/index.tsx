@@ -16,15 +16,8 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   return (
-    <div className="relative h-screen w-full bg-background">
+    <div className="h-screen w-full bg-background">
       <iframe src="/hospital.html" title="نبض المشافي" className="h-full w-full border-0" />
-      <a
-        href="/hospital.html"
-        download="hospital-app.html"
-        className="fixed bottom-4 left-4 z-10 rounded-full bg-primary px-4 py-3 text-sm font-bold text-primary-foreground shadow-lg"
-      >
-        ⬇ تحميل HTML
-      </a>
     </div>
   );
 }

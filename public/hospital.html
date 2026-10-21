@@ -89,6 +89,7 @@ const MONTHS=['يناير','فبراير','مارس','أبريل','مايو','ي
 const iso=d=>d.toISOString().slice(0,10);
 const today=new Date();
 function toast(t){const e=document.createElement('div');e.className='toast';e.textContent=t;document.body.appendChild(e);setTimeout(()=>e.remove(),2200)}
+function downloadHtml(){const c=document.documentElement.cloneNode(true);c.querySelectorAll('.toast,.modal').forEach(e=>e.remove());const b=new Blob(['<!DOCTYPE html>\n'+c.outerHTML],{type:'text/html;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='hospital-app.html';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),2000);toast('تم تحميل الملف: hospital-app.html')}
 function modal(html){const m=document.createElement('div');m.className='modal';m.innerHTML=`<div class="sheet fade">${html}<button class="btn b-gh" onclick="this.closest('.modal').remove()">إغلاق</button></div>`;m.onclick=e=>{if(e.target===m)m.remove()};document.body.appendChild(m);return m}
 
 // ===== البيانات =====
@@ -134,10 +135,11 @@ function item(ic,nm,val,onclick,cmp,extra=''){return `<div class="item fade" onc
 function bellCount(){return S.h==null?0:S.returns[S.h].length+S.alerts.filter(a=>a.h===S.h).length}
 function home(){const ind=indicators();const on=S.h!=null;const bc=bellCount();
 $('#app').innerHTML=`<header><div class="brand"><div class="lg">🏥</div><div>نبض المشافي<div class="sub">${today.toLocaleDateString('ar-EG',{weekday:'long',day:'numeric',month:'long'})}</div></div></div>
-<button class="icbtn bell ${on&&!S.bellSeen&&bc?'on':''}" onclick="openBell()">🔔${on&&!S.bellSeen&&bc?'<span class="q">?</span>':''}</button></header>
+<div style="display:flex;gap:8px"><button class="icbtn" onclick="downloadHtml()" title="تحميل التطبيق كملف HTML">⬇</button><button class="icbtn bell ${on&&!S.bellSeen&&bc?'on':''}" onclick="openBell()">🔔${on&&!S.bellSeen&&bc?'<span class="q">?</span>':''}</button></div></header>
 <div class="grid">${ind.map((x,i)=>`<div class="tile ${on?'':'dim'}" style="--c:${x.c}" data-i="${i}"><div class="ring">${ringSvg(on?x.p:0,x.c)}<div class="ic">${x.ic}</div></div><div class="tt">${x.t}</div><div class="lines">${on?x.lines.join('<br>'):'—'}</div></div>`).join('')}</div>
 ${HOSP.map((h,i)=>`<button class="hbtn ${S.h===i?'act':''}" data-h="${i}"><span class="n">${['①','②','③'][i]}</span>الدخول إلى ${h}<span style="margin-inline-start:auto">${S.h===i?'🟢':'⚪'}</span></button>`).join('')}
-<div class="hint">نقرة واحدة: إضاءة المؤشرات • نقرتان: لوحة الإدارة • ضغط مطوّل على 💬 و🏛️: الرسائل</div>`;
+<div class="hint">نقرة واحدة: إضاءة المؤشرات • نقرتان: لوحة الإدارة • ضغط مطوّل على 💬 و🏛️: الرسائل</div>
+<button class="btn b-pri" style="width:100%;margin-top:14px" onclick="downloadHtml()">⬇ تحميل التطبيق كملف HTML</button>`;
 document.querySelectorAll('.hbtn').forEach(b=>{let t=null;b.onclick=()=>{const i=+b.dataset.h;if(t){clearTimeout(t);t=null;S.h=i;go(hospMenu);return}t=setTimeout(()=>{t=null;S.h=i;S.bellSeen=false;home()},280)}});
 document.querySelectorAll('.tile').forEach(el=>{const x=ind[+el.dataset.i];let lp=null,long=false;
  el.onpointerdown=()=>{long=false;if(x.long)lp=setTimeout(()=>{long=true;if(!on)return toast('اختر مستشفى أولاً');go(msgCats,x.long)},600)};
