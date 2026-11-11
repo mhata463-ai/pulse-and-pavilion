@@ -8,3 +8,5 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+- Hospital system sync enters via src/routes/api/public/sync/$kind.ts, guarded by SYNC_API_KEY bearer; it upserts so the agent can resend safely.
