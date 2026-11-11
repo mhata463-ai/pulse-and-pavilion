@@ -25,7 +25,7 @@ export const Route = createFileRoute("/api/public/sync/$kind")({
   server: {
     handlers: {
       POST: async ({ request, params }) => {
-        const key = process.env.SYNC_API_KEY;
+        const key = process.env['SYNC_API_KEY'];
         const got = (request.headers.get("authorization") ?? "").replace(/^Bearer\s+/i, "");
         if (!key || !safeEqual(got, key)) return new Response("Unauthorized", { status: 401 });
 
