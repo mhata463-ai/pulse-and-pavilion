@@ -14,7 +14,356 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      cashbox_records: {
+        Row: {
+          cash: number
+          cheques: number
+          day: string
+          deferred: number
+          hospital_id: string
+          id: string
+          insurance: number
+          match_status: string
+          matched_at: string | null
+          pledges: Json
+          updated_at: string
+          wallets: number
+        }
+        Insert: {
+          cash?: number
+          cheques?: number
+          day?: string
+          deferred?: number
+          hospital_id: string
+          id?: string
+          insurance?: number
+          match_status?: string
+          matched_at?: string | null
+          pledges?: Json
+          updated_at?: string
+          wallets?: number
+        }
+        Update: {
+          cash?: number
+          cheques?: number
+          day?: string
+          deferred?: number
+          hospital_id?: string
+          id?: string
+          insurance?: number
+          match_status?: string
+          matched_at?: string | null
+          pledges?: Json
+          updated_at?: string
+          wallets?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cashbox_records_hospital_id_fkey"
+            columns: ["hospital_id"]
+            isOneToOne: false
+            referencedRelation: "hospitals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      expense_limits: {
+        Row: {
+          category: string
+          hospital_id: string
+          id: string
+          max_amount: number
+          period: string
+        }
+        Insert: {
+          category: string
+          hospital_id: string
+          id?: string
+          max_amount: number
+          period: string
+        }
+        Update: {
+          category?: string
+          hospital_id?: string
+          id?: string
+          max_amount?: number
+          period?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expense_limits_hospital_id_fkey"
+            columns: ["hospital_id"]
+            isOneToOne: false
+            referencedRelation: "hospitals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      expenses: {
+        Row: {
+          amount: number
+          category: string
+          created_at: string
+          details: Json
+          external_ref: string | null
+          hospital_id: string
+          id: string
+          invoice_no: string | null
+          item: string
+          period: string
+          spent_on: string
+        }
+        Insert: {
+          amount: number
+          category: string
+          created_at?: string
+          details?: Json
+          external_ref?: string | null
+          hospital_id: string
+          id?: string
+          invoice_no?: string | null
+          item: string
+          period: string
+          spent_on?: string
+        }
+        Update: {
+          amount?: number
+          category?: string
+          created_at?: string
+          details?: Json
+          external_ref?: string | null
+          hospital_id?: string
+          id?: string
+          invoice_no?: string | null
+          item?: string
+          period?: string
+          spent_on?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expenses_hospital_id_fkey"
+            columns: ["hospital_id"]
+            isOneToOne: false
+            referencedRelation: "hospitals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hospital_vitals: {
+        Row: {
+          attendance: Json
+          beds: Json
+          day: string
+          electricity: Json
+          emergency: Json
+          hospital_id: string
+          id: string
+          returns: number
+          revenue: number
+          surgeries: Json
+          updated_at: string
+        }
+        Insert: {
+          attendance?: Json
+          beds?: Json
+          day?: string
+          electricity?: Json
+          emergency?: Json
+          hospital_id: string
+          id?: string
+          returns?: number
+          revenue?: number
+          surgeries?: Json
+          updated_at?: string
+        }
+        Update: {
+          attendance?: Json
+          beds?: Json
+          day?: string
+          electricity?: Json
+          emergency?: Json
+          hospital_id?: string
+          id?: string
+          returns?: number
+          revenue?: number
+          surgeries?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hospital_vitals_hospital_id_fkey"
+            columns: ["hospital_id"]
+            isOneToOne: false
+            referencedRelation: "hospitals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hospitals: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          last_sync_at: string | null
+          name: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          last_sync_at?: string | null
+          name: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          last_sync_at?: string | null
+          name?: string
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          body: string
+          created_at: string
+          hospital_id: string
+          id: string
+          is_read: boolean
+          kind: string
+          remind_at: string | null
+          reply: string | null
+          sender: string | null
+          source: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          hospital_id: string
+          id?: string
+          is_read?: boolean
+          kind: string
+          remind_at?: string | null
+          reply?: string | null
+          sender?: string | null
+          source: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          hospital_id?: string
+          id?: string
+          is_read?: boolean
+          kind?: string
+          remind_at?: string | null
+          reply?: string | null
+          sender?: string | null
+          source?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_hospital_id_fkey"
+            columns: ["hospital_id"]
+            isOneToOne: false
+            referencedRelation: "hospitals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      revenue_returns: {
+        Row: {
+          amount: number
+          created_at: string
+          external_ref: string | null
+          hospital_id: string
+          id: string
+          kind: string
+          quantity: number
+          reason: string | null
+          status: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          external_ref?: string | null
+          hospital_id: string
+          id?: string
+          kind: string
+          quantity?: number
+          reason?: string | null
+          status?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          external_ref?: string | null
+          hospital_id?: string
+          id?: string
+          kind?: string
+          quantity?: number
+          reason?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "revenue_returns_hospital_id_fkey"
+            columns: ["hospital_id"]
+            isOneToOne: false
+            referencedRelation: "hospitals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      staff_attendance: {
+        Row: {
+          check_in: string | null
+          check_out: string | null
+          day: string
+          employee_code: string
+          employee_name: string
+          hospital_id: string
+          id: string
+          job_title: string | null
+          late_minutes: number
+          shift: string
+          status: string
+        }
+        Insert: {
+          check_in?: string | null
+          check_out?: string | null
+          day: string
+          employee_code: string
+          employee_name: string
+          hospital_id: string
+          id?: string
+          job_title?: string | null
+          late_minutes?: number
+          shift?: string
+          status?: string
+        }
+        Update: {
+          check_in?: string | null
+          check_out?: string | null
+          day?: string
+          employee_code?: string
+          employee_name?: string
+          hospital_id?: string
+          id?: string
+          job_title?: string | null
+          late_minutes?: number
+          shift?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_attendance_hospital_id_fkey"
+            columns: ["hospital_id"]
+            isOneToOne: false
+            referencedRelation: "hospitals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
