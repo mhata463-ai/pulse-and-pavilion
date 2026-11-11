@@ -107,17 +107,21 @@ S.bellSeen=false;
 const BEDS=[['حضانة','👶',10,6,1,3],['أسرة أطفال','🧸',20,10,3,2],['أسرة عامة','🛏️',50,35,5,10],['عناية مركزة','🫀',10,3,0,2],['ثلاجة الموتى','❄️',10,4,3,0]];
 const bedOcc=b=>b[3]-b[4]+b[5];
 const sc=()=>SCALE[S.h??0];
-function rev(){const s=sc();const r=Math.round(1000*s);const ret=Math.round(200*s)+S.deduct[S.h??0];return {r,ret,real:r-ret}}
+let LIVE=[];const lv=()=>LIVE[S.h??0]||null;const jv=(o,k,d)=>(o&&o[k]!=null)?+o[k]:d;
+window.addEventListener('message',e=>{if(e.origin!==location.origin||!e.data||e.data.type!=='live')return;LIVE=e.data.live||[];
+ LIVE.forEach((L,i)=>{const c=L&&L.cashbox;if(c&&S.fund[i]&&S.fund[i].state==='pending')S.fund[i].today={cash:+c.cash,wallet:+c.wallets,cheque:+c.cheques,ins:+c.insurance,pawn:{cars:jv(c.pledges,'cars',0),gold:jv(c.pledges,'gold',0)},credit:+c.deferred}});render()});
+if(parent!==window)parent.postMessage({type:'ready'},location.origin);
+function rev(){const L=lv(),v=L&&L.vitals;if(v){const r=+v.revenue,ret=+v.returns+S.deduct[S.h??0];return {r,ret,real:r-ret}}const s=sc();const r=Math.round(1000*s);const ret=Math.round(200*s)+S.deduct[S.h??0];return {r,ret,real:r-ret}}
 
-function indicators(){const s=sc();const R=rev();return [
+function indicators(){const s=sc();const R=rev();const V=(lv()||{}).vitals||{};const g=(o,k,d)=>jv(V[o],k,Math.round(d*s));return [
  {k:'rev',ic:'💰',t:'الإيرادات اليومية',c:'#3ee08f',p:R.real/R.r,lines:[`الإيراد <b>${fmt(R.r)}</b>`,`المردود <b>${fmt(R.ret)}</b>`,`الحقيقي <b>${fmt(R.real)}</b>`]},
- {k:'ops',ic:'🔪',t:'العمليات الجراحية',c:'#4da3ff',p:.7,lines:[`الكبرى <b>${Math.round(3*s)}</b>`,`المتوسطة <b>${Math.round(46*s)}</b>`,`الصغرى <b>${Math.round(78*s)}</b>`]},
- {k:'er',ic:'🚑',t:'الحالات الطارئة',c:'#ff5d73',p:43/51,lines:[`المقبولة <b>${Math.round(43*s)}</b>`,`المرفوضة <b>${Math.round(6*s)}</b>`,`المحوّلة <b>${Math.round(2*s)}</b>`]},
+ {k:'ops',ic:'🔪',t:'العمليات الجراحية',c:'#4da3ff',p:.7,lines:[`الكبرى <b>${g('surgeries','major',3)}</b>`,`المتوسطة <b>${g('surgeries','medium',46)}</b>`,`الصغرى <b>${g('surgeries','minor',78)}</b>`]},
+ {k:'er',ic:'🚑',t:'الحالات الطارئة',c:'#ff5d73',p:43/51,lines:[`المقبولة <b>${g('emergency','accepted',43)}</b>`,`المرفوضة <b>${g('emergency','rejected',6)}</b>`,`المحوّلة <b>${g('emergency','transferred',2)}</b>`]},
  {k:'beds',ic:'🛏️',t:'إشغال الأسرّة',c:'#ffb547',p:BEDS.reduce((a,b)=>a+bedOcc(b),0)/BEDS.reduce((a,b)=>a+b[2],0),
    lines:BEDS.map(b=>`${b[1]} <b>${Math.round(bedOcc(b)/b[2]*100)}%</b><small>خرج ${b[4]} • دخل ${b[5]}</small>`)},
  {k:'att',ic:'🫆',t:'حضور الموظفين',c:'#19d3c5',p:.85,lines:['الحضور <b>85%</b>','المتأخرين <b>5%</b>','الغائبين <b>8%</b>','المجازين <b>2%</b>',
    `<svg width="60" height="26" viewBox="0 0 60 26">${[['د',9],['م',6],['ن',4],['إ',2]].map((x,i)=>`<rect x="${i*15+2}" y="${20-x[1]*2}" width="10" height="${x[1]*2}" rx="2" fill="#ff5d73"/><text x="${i*15+7}" y="26" font-size="6" fill="#8aa4bd" text-anchor="middle">${x[0]}</text>`).join('')}</svg><small>أكثر الغياب: دكاترة</small>`]},
- {k:'elec',ic:'⚡',t:'الكهرباء (كيلو)',c:'#facc15',p:160/300,lines:[`المنظومة <b>${Math.round(160*s)}</b>`,`التجاري <b>${Math.round(60*s)}</b>`,`الحكومي <b>${Math.round(80*s)}</b>`]},
+ {k:'elec',ic:'⚡',t:'الكهرباء (كيلو)',c:'#facc15',p:160/300,lines:[`المنظومة <b>${g('electricity','system',160)}</b>`,`التجاري <b>${g('electricity','commercial',60)}</b>`,`الحكومي <b>${g('electricity','government',80)}</b>`]},
  {k:'staff',ic:'💬',t:'إشعارات الموظفين',c:'#a78bfa',p:.6,long:'staff',lines:['دكاترة <b>43</b>','إداريين <b>6</b>','نظافة <b>2</b>','<small>اضغط مطولاً للرسائل</small>']},
  {k:'gov',ic:'🏛️',t:'الرسائل الحكومية',c:'#f472b6',p:.4,long:'gov',lines:['تذكارية <b>1</b>','مخالفة <b>2</b>','طلب جهة <b>2</b>','<small>اضغط مطولاً للرسائل</small>']}]}
 
