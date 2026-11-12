@@ -2,6 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { Button } from '@/components/ui/button';
+import { loadLive, saveHospitalAction } from '@/lib/hospital-data';
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -17,40 +19,51 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
-async function loadLive() {
-  const { data: hs } = await supabase.from("hospitals").select("id, code, name, last_sync_at").order("code");
-  const out: Record<string, unknown>[] = [];
-  for (const h of hs ?? []) {
-    const [v, c] = await Promise.all([
-      supabase.from("hospital_vitals").select("*").eq("hospital_id", h.id).order("day", { ascending: false }).limit(1).maybeSingle(),
-      supabase.from("cashbox_records").select("*").eq("hospital_id", h.id).order("day", { ascending: false }).limit(1).maybeSingle(),
-    ]);
-    out.push({ code: h.code, last_sync_at: h.last_sync_at, vitals: v.data, cashbox: c.data });
-  }
-  return out;
-}
-
 function Index() {
   const [session, setSession] = useState<Session | null | undefined>(undefined);
   const frame = useRef<HTMLIFrameElement>(null);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => setSession(data.session));
     const { data } = supabase.auth.onAuthStateChange((_e, s) => setSession(s));
+    supabase.auth.getUser().then(async ({ data: user }) => {
+      if (!user.user) { setSession(null); return; }
+      const { data: current } = await supabase.auth.getSession();
+      setSession(current.session);
+    });
     return () => data.subscription.unsubscribe();
   }, []);
 
   useEffect(() => {
     if (!session) return;
     let stop = false;
+    let pushing = false;
     const push = async () => {
-      const live = await loadLive();
-      if (!stop) frame.current?.contentWindow?.postMessage({ type: "live", live }, window.location.origin);
+      if (pushing || stop) return;
+      pushing = true;
+      try {
+        const live = await loadLive();
+        if (!stop) { setError(''); frame.current?.contentWindow?.postMessage({ type: 'live', live }, window.location.origin); }
+      } catch { if (!stop) setError('تعذّر تحديث البيانات. ستُعاد المحاولة؛ الأرقام المعروضة قديمة.'); }
+      finally { pushing = false; }
     };
-    const onMsg = (e: MessageEvent) => {
-      if (e.origin !== window.location.origin) return;
+    const onMsg = async (e: MessageEvent) => {
+      if (e.origin !== window.location.origin || e.source !== frame.current?.contentWindow) return;
       if (e.data?.type === "ready") push();
-      if (e.data?.type === "logout") supabase.auth.signOut();
+      if (e.data?.type === 'logout') {
+        stop = true;
+        const { error: logoutError } = await supabase.auth.signOut();
+        if (logoutError) { stop = false; setError('تعذّر الخروج؛ حاول مجدداً.'); } else { setSession(null); setError(''); }
+      }
+      if (e.data?.type === 'action' && typeof e.data.requestId === 'string') {
+        try {
+          await saveHospitalAction(e.data.action, e.data.input ?? {});
+          const live = await loadLive();
+          if (!stop) frame.current?.contentWindow?.postMessage({ type: 'saved', requestId: e.data.requestId, live }, window.location.origin);
+        } catch {
+          if (!stop) frame.current?.contentWindow?.postMessage({ type: 'saved', requestId: e.data.requestId, error: 'لم يتم الحفظ. تحقق من اتصالك وصلاحية حسابك.' }, window.location.origin);
+        }
+      }
     };
     window.addEventListener("message", onMsg);
     push();
@@ -62,7 +75,8 @@ function Index() {
   if (!session) return <Login />;
   return (
     <div className="h-screen w-full bg-background">
-      <iframe ref={frame} src="/hospital.html" title="نبض المشافي" className="h-full w-full border-0" />
+      {error && <p role="alert" dir="rtl" className="fixed top-0 z-50 w-full bg-destructive p-2 text-center text-sm text-destructive-foreground">{error}</p>}
+      <iframe ref={frame} src="/hospital.html?connected=1" title="نبض المشافي" className="h-full w-full border-0" />
     </div>
   );
 }
@@ -100,12 +114,12 @@ function Login() {
         <input type="password" required minLength={6} placeholder="كلمة السر" value={password} onChange={(e) => setPassword(e.target.value)}
           className="w-full rounded-xl border border-input bg-background px-4 py-3 text-foreground" />
         {msg && <p className="text-center text-sm text-muted-foreground">{msg}</p>}
-        <button disabled={busy} className="w-full rounded-xl bg-primary py-3 font-bold text-primary-foreground disabled:opacity-60">
+        <Button disabled={busy} className="h-auto w-full py-3 font-bold">
           {busy ? "..." : mode === "in" ? "دخول" : "إنشاء حساب"}
-        </button>
-        <button type="button" onClick={() => { setMode(mode === "in" ? "up" : "in"); setMsg(""); }} className="w-full text-sm text-muted-foreground underline">
+        </Button>
+        <Button variant="link" type="button" onClick={() => { setMode(mode === "in" ? "up" : "in"); setMsg(""); }} className="w-full text-sm text-muted-foreground">
           {mode === "in" ? "ليس لديك حساب؟ أنشئ حساباً" : "لديك حساب؟ ادخل"}
-        </button>
+        </Button>
       </form>
     </div>
   );

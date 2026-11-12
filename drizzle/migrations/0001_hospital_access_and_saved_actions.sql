@@ -1,0 +1,27 @@
+CREATE TABLE public.hospital_access (hospital_id uuid NOT NULL REFERENCES public.hospitals(id) ON DELETE CASCADE, user_id uuid NOT NULL, PRIMARY KEY(hospital_id,user_id));
+GRANT SELECT ON public.hospital_access TO authenticated;
+GRANT ALL ON public.hospital_access TO service_role;
+ALTER TABLE public.hospital_access ENABLE ROW LEVEL SECURITY;
+CREATE POLICY own_access ON public.hospital_access FOR SELECT TO authenticated USING (user_id=auth.uid());
+CREATE FUNCTION public.can_access_hospital(hid uuid) RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public AS $$ SELECT EXISTS(SELECT 1 FROM public.hospital_access WHERE hospital_id=hid AND user_id=auth.uid()) $$;
+REVOKE ALL ON FUNCTION public.can_access_hospital(uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.can_access_hospital(uuid) TO authenticated;
+DO $$ DECLARE t text; BEGIN FOREACH t IN ARRAY ARRAY['hospitals','hospital_vitals','cashbox_records','revenue_returns','expenses','expense_limits','staff_attendance','notifications'] LOOP EXECUTE format('DROP POLICY IF EXISTS "signed-in read" ON public.%I',t); EXECUTE format('CREATE POLICY hospital_read ON public.%I FOR SELECT TO authenticated USING (public.can_access_hospital(%I))',t,CASE WHEN t='hospitals' THEN 'id' ELSE 'hospital_id' END); END LOOP; END $$;
+ALTER TABLE public.cashbox_records ADD COLUMN matched_snapshot jsonb;
+ALTER TABLE public.notifications ADD COLUMN external_ref text;
+CREATE UNIQUE INDEX notifications_sync_ref ON public.notifications(hospital_id,external_ref);
+GRANT UPDATE(match_status,matched_at,matched_snapshot) ON public.cashbox_records TO authenticated;
+CREATE POLICY cashbox_action ON public.cashbox_records FOR UPDATE TO authenticated USING(public.can_access_hospital(hospital_id)) WITH CHECK(public.can_access_hospital(hospital_id));
+GRANT UPDATE(status) ON public.revenue_returns TO authenticated;
+CREATE POLICY returns_action ON public.revenue_returns FOR UPDATE TO authenticated USING(public.can_access_hospital(hospital_id)) WITH CHECK(public.can_access_hospital(hospital_id));
+GRANT UPDATE(is_read,reply,remind_at) ON public.notifications TO authenticated;
+CREATE POLICY notifications_action ON public.notifications FOR UPDATE TO authenticated USING(public.can_access_hospital(hospital_id)) WITH CHECK(public.can_access_hospital(hospital_id));
+GRANT INSERT,UPDATE ON public.expense_limits TO authenticated;
+CREATE POLICY limits_insert ON public.expense_limits FOR INSERT TO authenticated WITH CHECK(public.can_access_hospital(hospital_id));
+CREATE POLICY limits_update ON public.expense_limits FOR UPDATE TO authenticated USING(public.can_access_hospital(hospital_id)) WITH CHECK(public.can_access_hospital(hospital_id));
+CREATE FUNCTION public.match_cashbox(record_id uuid, undo boolean) RETURNS void LANGUAGE plpgsql SECURITY INVOKER SET search_path=public AS $$ BEGIN
+IF undo THEN UPDATE public.cashbox_records SET match_status='undone',matched_at=NULL WHERE id=record_id AND match_status='done';
+ELSE UPDATE public.cashbox_records SET match_status='done',matched_at=now(),matched_snapshot=jsonb_build_object('cash',cash,'wallets',wallets,'cheques',cheques,'insurance',insurance,'deferred',deferred,'pledges',pledges) WHERE id=record_id AND match_status='pending'; END IF;
+IF NOT FOUND THEN RAISE EXCEPTION 'Record unavailable or already processed'; END IF; END $$;
+REVOKE ALL ON FUNCTION public.match_cashbox(uuid,boolean) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.match_cashbox(uuid,boolean) TO authenticated;
