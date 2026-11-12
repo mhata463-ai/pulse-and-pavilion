@@ -23,23 +23,23 @@ export async function loadLive() {
 }
 
 export async function saveHospitalAction(action: string, input: Record<string, unknown>) {
-  const id = typeof input.id === 'string' ? input.id : '';
-  if (action === 'return' && id && typeof input.approved === 'boolean') {
-    const result = await supabase.from('revenue_returns').update({ status: input.approved ? 'approved' : 'cancelled' })
+  const id = typeof input['id'] === 'string' ? input['id'] : '';
+  if (action === 'return' && id && typeof input['approved'] === 'boolean') {
+    const result = await supabase.from('revenue_returns').update({ status: input['approved'] ? 'approved' : 'cancelled' })
       .eq('id', id).eq('status', 'pending').select('id');
     if (result.error) throw result.error;
     if (!result.data?.length) throw new Error('المرتجع غير متاح أو تمت معالجته');
-  } else if (action === 'match' && id && typeof input.undo === 'boolean') {
-    const result = await supabase.rpc('match_cashbox', { record_id: id, undo: input.undo });
+  } else if (action === 'match' && id && typeof input['undo'] === 'boolean') {
+    const result = await supabase.rpc('match_cashbox', { record_id: id, undo: input['undo'] });
     if (result.error) throw result.error;
-  } else if (action === 'reply' && id && typeof input.reply === 'string') {
-    const result = await supabase.from('notifications').update({ reply: input.reply.slice(0, 4000), is_read: true }).eq('id', id).select('id');
+  } else if (action === 'reply' && id && typeof input['reply'] === 'string') {
+    const result = await supabase.from('notifications').update({ reply: input['reply'].slice(0, 4000), is_read: true }).eq('id', id).select('id');
     if (result.error) throw result.error;
     if (!result.data?.length) throw new Error('الإشعار غير متاح');
-  } else if (action === 'limit' && typeof input.hospital_id === 'string' && typeof input.category === 'string' && Array.isArray(input.limits)) {
-    const rows = input.limits.map((item: { period: string; max_amount: number }) => {
+  } else if (action === 'limit' && typeof input['hospital_id'] === 'string' && typeof input['category'] === 'string' && Array.isArray(input['limits'])) {
+    const rows = input['limits'].map((item: { period: string; max_amount: number }) => {
       if (!['daily', 'weekly', 'monthly'].includes(item.period) || !Number.isFinite(item.max_amount) || item.max_amount < 0) throw new Error('حد غير صحيح');
-      return { hospital_id: String(input.hospital_id), category: String(input.category), ...item };
+      return { hospital_id: String(input['hospital_id']), category: String(input['category']), ...item };
     });
     const result = await supabase.from('expense_limits').upsert(rows, { onConflict: 'hospital_id,category,period' });
     if (result.error) throw result.error;
