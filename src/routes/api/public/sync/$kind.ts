@@ -12,6 +12,7 @@ const schemas = {
   returns: z.object({ ...base, items: z.array(z.object({ external_ref: z.string().max(100), kind: z.string().max(100), amount: num, quantity: z.number().int().optional(), reason: z.string().max(500).optional() })).max(500) }),
   expenses: z.object({ ...base, items: z.array(z.object({ external_ref: z.string().max(100), period: z.enum(["daily", "monthly", "yearly"]), category: z.string().max(100), item: z.string().max(200), amount: num, invoice_no: z.string().max(100).optional(), spent_on: date, details: obj.optional() })).max(1000) }),
   attendance: z.object({ ...base, items: z.array(z.object({ employee_code: z.string().max(50), employee_name: z.string().max(200), job_title: z.string().max(100).optional(), day: date, shift: z.enum(["day", "night"]), check_in: z.string().nullable().optional(), check_out: z.string().nullable().optional(), status: z.enum(["present", "late", "absent", "leave"]), late_minutes: z.number().int().optional() })).max(2000) }),
+  notifications: z.object({ ...base, items: z.array(z.object({ external_ref: z.string().min(1).max(100), source: z.enum(['staff','gov']), kind: z.string().min(1).max(100), body: z.string().min(1).max(4000), sender: z.string().max(200).optional(), remind_at: z.string().datetime().nullable().optional() })).max(500) }),
 } as const;
 
 function safeEqual(a: string, b: string) {
@@ -47,9 +48,9 @@ export const Route = createFileRoute("/api/public/sync/$kind")({
         if (kind === "vitals") ({ error } = await db.from("hospital_vitals").upsert({ hospital_id: hid, ...data, updated_at: stamp }, { onConflict: "hospital_id,day" }));
         else if (kind === "cashbox") ({ error } = await db.from("cashbox_records").upsert({ hospital_id: hid, ...data, updated_at: stamp }, { onConflict: "hospital_id,day" }));
         else {
-          const table = { returns: "revenue_returns", expenses: "expenses", attendance: "staff_attendance" }[kind] as "revenue_returns" | "expenses" | "staff_attendance";
+          const table = { returns: "revenue_returns", expenses: "expenses", attendance: "staff_attendance", notifications: 'notifications' }[kind] as "revenue_returns" | "expenses" | "staff_attendance" | 'notifications';
           const conflict = kind === "attendance" ? "hospital_id,employee_code,day,shift" : "hospital_id,external_ref";
-          ({ error } = await db.from(table).upsert(data.items.map((i: any) => ({ hospital_id: hid, ...i })), { onConflict: conflict, ignoreDuplicates: kind === "returns" }));
+          ({ error } = await db.from(table).upsert(data.items.map((i: any) => ({ hospital_id: hid, ...i })), { onConflict: conflict, ignoreDuplicates: kind === "returns" || kind === 'notifications' }));
         }
         if (error) return Response.json({ error: error.message }, { status: 500 });
         await db.from("hospitals").update({ last_sync_at: stamp }).eq("id", hid);
