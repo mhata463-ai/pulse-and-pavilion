@@ -7,4 +7,4 @@
 - [x] Verify public mobile sign-in screen, demo navigation, reconciliation, undo and HTML download; action unit tests pass.
 - [ ] Verify authenticated mobile saved changes and logout: blocked until the owner creates and confirms an account and hospital access is assigned.
 
-- [ ] فيديو إعلان بمقدّم كرتوني يشرح التطبيق بلقطات شاشة حقيقية (~20 ث، طولي)
+- [x] فيديو إعلان بمقدّم كرتوني ولقطات شاشة حقيقية (بلا صوت، 22 ث)
