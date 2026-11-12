@@ -25,6 +25,7 @@ export type Database = {
           insurance: number
           match_status: string
           matched_at: string | null
+          matched_snapshot: Json | null
           pledges: Json
           updated_at: string
           wallets: number
@@ -39,6 +40,7 @@ export type Database = {
           insurance?: number
           match_status?: string
           matched_at?: string | null
+          matched_snapshot?: Json | null
           pledges?: Json
           updated_at?: string
           wallets?: number
@@ -53,6 +55,7 @@ export type Database = {
           insurance?: number
           match_status?: string
           matched_at?: string | null
+          matched_snapshot?: Json | null
           pledges?: Json
           updated_at?: string
           wallets?: number
@@ -149,6 +152,29 @@ export type Database = {
           },
         ]
       }
+      hospital_access: {
+        Row: {
+          hospital_id: string
+          user_id: string
+        }
+        Insert: {
+          hospital_id: string
+          user_id: string
+        }
+        Update: {
+          hospital_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hospital_access_hospital_id_fkey"
+            columns: ["hospital_id"]
+            isOneToOne: false
+            referencedRelation: "hospitals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       hospital_vitals: {
         Row: {
           attendance: Json
@@ -227,6 +253,7 @@ export type Database = {
         Row: {
           body: string
           created_at: string
+          external_ref: string | null
           hospital_id: string
           id: string
           is_read: boolean
@@ -239,6 +266,7 @@ export type Database = {
         Insert: {
           body: string
           created_at?: string
+          external_ref?: string | null
           hospital_id: string
           id?: string
           is_read?: boolean
@@ -251,6 +279,7 @@ export type Database = {
         Update: {
           body?: string
           created_at?: string
+          external_ref?: string | null
           hospital_id?: string
           id?: string
           is_read?: boolean
@@ -369,7 +398,11 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      can_access_hospital: { Args: { hid: string }; Returns: boolean }
+      match_cashbox: {
+        Args: { record_id: string; undo: boolean }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
