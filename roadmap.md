@@ -8,3 +8,4 @@
 - [ ] Verify authenticated mobile saved changes and logout: blocked until the owner creates and confirms an account and hospital access is assigned.
 
 - [x] فيديو إعلان بمقدّم كرتوني ولقطات شاشة حقيقية (بلا صوت، 22 ث)
+- [x] إعلان دقيقة واحدة: مدير مهموم بين الأوراق ثم جوال يظهر ويبتسم، بنص المستخدم
